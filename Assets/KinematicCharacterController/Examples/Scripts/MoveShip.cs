@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace KinematicCharacterController.Examples
 {
-    public class ExampleMovingPlatform : MonoBehaviour, IMoverController
+    public class MoveShip : MonoBehaviour, IMoverController
     {
         public PhysicsMover Mover;
 

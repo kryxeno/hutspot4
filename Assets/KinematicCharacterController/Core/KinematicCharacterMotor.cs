@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace KinematicCharacterController
@@ -31,7 +32,7 @@ namespace KinematicCharacterController
     /// Use this to save state or revert to past state
     /// </summary>
     [System.Serializable]
-    public struct KinematicCharacterMotorState
+    public struct KinematicCharacterMotorState : INetworkSerializable
     {
         public Vector3 Position;
         public Quaternion Rotation;
@@ -44,6 +45,24 @@ namespace KinematicCharacterController
 
         public Rigidbody AttachedRigidbody;
         public Vector3 AttachedRigidbodyVelocity;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref Position);
+            serializer.SerializeValue(ref Rotation);
+            serializer.SerializeValue(ref BaseVelocity);
+            serializer.SerializeValue(ref MustUnground);
+            serializer.SerializeValue(ref MustUngroundTime);
+            serializer.SerializeValue(ref LastMovementIterationFoundAnyGround);
+            serializer.SerializeValue(ref GroundingStatus);
+
+            bool hasAttachedRigidbody = AttachedRigidbody != null;
+            serializer.SerializeValue(ref hasAttachedRigidbody);
+            if (hasAttachedRigidbody)
+            {
+                serializer.SerializeValue(ref AttachedRigidbodyVelocity);
+            }
+        }
     }
 
     /// <summary>
@@ -93,7 +112,7 @@ namespace KinematicCharacterController
     /// <summary>
     /// Contains the simulation-relevant information for the motor's grounding status
     /// </summary>
-    public struct CharacterTransientGroundingReport
+    public struct CharacterTransientGroundingReport : INetworkSerializable
     {
         public bool FoundAnyGround;
         public bool IsStableOnGround;
@@ -110,6 +129,16 @@ namespace KinematicCharacterController
             GroundNormal = groundingReport.GroundNormal;
             InnerGroundNormal = groundingReport.InnerGroundNormal;
             OuterGroundNormal = groundingReport.OuterGroundNormal;
+        }
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref FoundAnyGround);
+            serializer.SerializeValue(ref IsStableOnGround);
+            serializer.SerializeValue(ref SnappingPrevented);
+            serializer.SerializeValue(ref GroundNormal);
+            serializer.SerializeValue(ref InnerGroundNormal);
+            serializer.SerializeValue(ref OuterGroundNormal);
         }
     }
 
@@ -1866,7 +1895,7 @@ namespace KinematicCharacterController
                         else if (!hitBodyIsDynamic)
                         {
                             PhysicsMover physicsMover = bodyHit.Rigidbody.GetComponent<PhysicsMover>();
-                            if(physicsMover)
+                            if (physicsMover)
                             {
                                 hitBodyVelocity = physicsMover.Velocity;
                             }
@@ -2118,7 +2147,7 @@ namespace KinematicCharacterController
             Vector3 characterUp = characterRotation * _cachedWorldUp;
             Vector3 verticalCharToHit = Vector3.Project((hitPoint - characterPosition), characterUp);
             Vector3 horizontalCharToHitDirection = Vector3.ProjectOnPlane((hitPoint - characterPosition), characterUp).normalized;
-            Vector3 stepCheckStartPos = (hitPoint - verticalCharToHit) + (characterUp * MaxStepHeight) + (horizontalCharToHitDirection * CollisionOffset * 3f); 
+            Vector3 stepCheckStartPos = (hitPoint - verticalCharToHit) + (characterUp * MaxStepHeight) + (horizontalCharToHitDirection * CollisionOffset * 3f);
 
             // Do outer step check with capsule cast on hit point
             nbStepHits = CharacterCollisionsSweep(
@@ -2291,7 +2320,7 @@ namespace KinematicCharacterController
             {
                 linearVelocity = interactiveRigidbody.velocity;
                 angularVelocity = interactiveRigidbody.angularVelocity;
-                if(interactiveRigidbody.isKinematic)
+                if (interactiveRigidbody.isKinematic)
                 {
                     PhysicsMover physicsMover = interactiveRigidbody.GetComponent<PhysicsMover>();
                     if (physicsMover)

@@ -21,7 +21,7 @@ namespace KinematicCharacterController.Examples
 
         public override void OnNetworkSpawn()
         {
-            if (!IsOwner)
+            if (IsSpawned && !IsOwner)
             {
                 // Destroy(CharacterCamera);
                 CharacterCamera.gameObject.GetComponent<CinemachineVirtualCamera>().Priority = 0;
@@ -30,7 +30,7 @@ namespace KinematicCharacterController.Examples
 
         private void Start()
         {
-            if (!IsOwner) return;
+            if (IsSpawned && !IsOwner) return;
             // Cursor.lockState = CursorLockMode.Locked;
 
             // Tell camera to follow transform
@@ -44,7 +44,7 @@ namespace KinematicCharacterController.Examples
 
         private void Update()
         {
-            if (!IsOwner) return;
+            if (IsSpawned && !IsOwner) return;
 
             if (Input.GetMouseButtonDown(0))
             {
@@ -56,7 +56,7 @@ namespace KinematicCharacterController.Examples
 
         private void LateUpdate()
         {
-            if (!IsOwner) return;
+            if (IsSpawned && !IsOwner) return;
 
             // Handle rotating the camera along with physics movers
             if (CharacterCamera.RotateWithPhysicsMover && Character.Motor.AttachedRigidbody != null)
