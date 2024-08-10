@@ -32,7 +32,7 @@ namespace KinematicCharacterController
     /// proper interaction with characters
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
-    public class PhysicsMover : MonoBehaviour
+    public class PhysicsMover : NetworkBehaviour
     {
         /// <summary>
         /// The mover's Rigidbody
@@ -256,14 +256,17 @@ namespace KinematicCharacterController
             InitialSimulationPosition = TransientPosition;
             InitialSimulationRotation = TransientRotation;
 
-            MoverController.UpdateMovement(out _internalTransientPosition, out _internalTransientRotation, deltaTime);
+            if (IsSpawned && IsServer)
+            {
+                MoverController.UpdateMovement(out _internalTransientPosition, out _internalTransientRotation, deltaTime);
+            }
 
             if (deltaTime > 0f)
             {
                 Velocity = (TransientPosition - InitialSimulationPosition) / deltaTime;
 
-                Quaternion rotationFromCurrentToGoal = TransientRotation * (Quaternion.Inverse(InitialSimulationRotation));
-                AngularVelocity = (Mathf.Deg2Rad * rotationFromCurrentToGoal.eulerAngles) / deltaTime;
+                Quaternion rotationFromCurrentToGoal = TransientRotation * Quaternion.Inverse(InitialSimulationRotation);
+                AngularVelocity = Mathf.Deg2Rad * rotationFromCurrentToGoal.eulerAngles / deltaTime;
             }
         }
     }
