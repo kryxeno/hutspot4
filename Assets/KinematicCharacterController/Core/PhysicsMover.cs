@@ -256,10 +256,10 @@ namespace KinematicCharacterController
             InitialSimulationPosition = TransientPosition;
             InitialSimulationRotation = TransientRotation;
 
-            if (IsSpawned && IsServer)
-            {
-                MoverController.UpdateMovement(out _internalTransientPosition, out _internalTransientRotation, deltaTime);
-            }
+            // if (IsSpawned && IsServer)
+            // {
+            MoverController.UpdateMovement(out _internalTransientPosition, out _internalTransientRotation, deltaTime);
+            // }
 
             if (deltaTime > 0f)
             {
