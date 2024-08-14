@@ -8,6 +8,7 @@ using TMPro;
 public class LobbyListSingleUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI lobbyNameText;
+    [SerializeField] private TextMeshProUGUI lobbyPlayersText;
     private Lobby lobby;
 
     private void Awake()
@@ -22,5 +23,6 @@ public class LobbyListSingleUI : MonoBehaviour
     {
         this.lobby = lobby;
         lobbyNameText.text = lobby.Name;
+        lobbyPlayersText.text = lobby.Players.Count + "/" + lobby.MaxPlayers;
     }
 }

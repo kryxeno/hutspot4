@@ -11,9 +11,10 @@ public class LobbyUI : MonoBehaviour
     [SerializeField] private Button quickJoinButton;
     [SerializeField] private Button joinByCodeButton;
     [SerializeField] private TMP_InputField codeInputField;
-
+    [SerializeField] private TMP_InputField playerNameInputField;
     [SerializeField] private Transform lobbyContainer;
     [SerializeField] private Transform lobbyTemplate;
+    [SerializeField] private CreateLobbyUI createLobbyUI;
 
     private void Awake()
     {
@@ -26,6 +27,11 @@ public class LobbyUI : MonoBehaviour
 
     private void Start()
     {
+        playerNameInputField.text = TestMultiplayer.Instance.GetPlayerName();
+        playerNameInputField.onValueChanged.AddListener((string newText) =>
+        {
+            TestMultiplayer.Instance.SetPlayerName(newText);
+        });
         TestLobby.Instance.OnLobbyListChanged += TestLobby_OnLobbyListChanged;
         UpdateLobbyList(new List<Lobby>());
     }
@@ -37,22 +43,16 @@ public class LobbyUI : MonoBehaviour
 
     private void OnCreateLobbyButtonClicked()
     {
-        Debug.Log("Create Lobby Button Clicked");
-        // TestLobby.Instance.CreateLobby();
-        TestMultiplayer.Instance.StartHost();
-        Loader.LoadNetwork(Loader.Scene.CharacterSelectScene);
+        createLobbyUI.Show();
     }
 
     private void OnQuickJoinButtonClicked()
     {
-        Debug.Log("Quick Join Button Clicked");
-        TestMultiplayer.Instance.StartClient();
-        // TestLobby.Instance.QuickJoinLobby();
+        TestLobby.Instance.QuickJoinLobby();
     }
 
     private void OnJoinByCodeButtonClicked()
     {
-        Debug.Log("Join By Code Button Clicked");
         TestLobby.Instance.JoinLobbyByCode(codeInputField.text);
     }
 
@@ -71,5 +71,10 @@ public class LobbyUI : MonoBehaviour
 
             lobbyTransform.GetComponent<LobbyListSingleUI>().SetLobby(lobby);
         }
+    }
+
+    private void OnDestroy()
+    {
+        TestLobby.Instance.OnLobbyListChanged -= TestLobby_OnLobbyListChanged;
     }
 }
