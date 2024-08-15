@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using QFSW.QC;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using UnityEngine;
@@ -44,6 +45,16 @@ public class TestMultiplayer : NetworkBehaviour
         PlayerPrefs.SetString(PLAYER_PREFS_PLAYER_NAME_MULTIPLAYER, playerName);
     }
 
+    [Command]
+    private void ListPlayerNetworkList()
+    {
+        Debug.Log("Player network list count: " + playerDataNetworkList.Count);
+        foreach (PlayerData playerData in playerDataNetworkList)
+        {
+            Debug.Log(playerData.playerName);
+        }
+    }
+
     private void PlayerDataNetworkList_OnListChanged(NetworkListEvent<PlayerData> changeEvent)
     {
         OnPlayerDataNetworkListChanged?.Invoke(this, EventArgs.Empty);
@@ -55,6 +66,14 @@ public class TestMultiplayer : NetworkBehaviour
         NetworkManager.Singleton.ConnectionApprovalCallback += NetworkManager_ConnectionApprovalCallback;
         NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_Server_OnClientDisconnectCallback;
         NetworkManager.Singleton.StartHost();
+    }
+
+    public void Shutdown()
+    {
+        NetworkManager.Singleton.OnClientConnectedCallback -= NetworkManager_OnClientConnectedCallback;
+        NetworkManager.Singleton.ConnectionApprovalCallback -= NetworkManager_ConnectionApprovalCallback;
+        NetworkManager.Singleton.OnClientDisconnectCallback -= NetworkManager_Server_OnClientDisconnectCallback;
+        NetworkManager.Singleton.Shutdown();
     }
 
     private void NetworkManager_Server_OnClientDisconnectCallback(ulong clientId)

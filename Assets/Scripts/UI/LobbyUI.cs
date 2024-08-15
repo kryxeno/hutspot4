@@ -18,10 +18,9 @@ public class LobbyUI : MonoBehaviour
 
     private void Awake()
     {
-        createLobbyButton.onClick.AddListener(OnCreateLobbyButtonClicked);
         quickJoinButton.onClick.AddListener(OnQuickJoinButtonClicked);
+        createLobbyButton.onClick.AddListener(OnCreateLobbyButtonClicked);
         joinByCodeButton.onClick.AddListener(OnJoinByCodeButtonClicked);
-
         lobbyTemplate.gameObject.SetActive(false);
     }
 

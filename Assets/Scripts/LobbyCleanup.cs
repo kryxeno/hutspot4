@@ -7,14 +7,16 @@ public class LobbyCleanup : MonoBehaviour
 {
     private void Awake()
     {
-        if (NetworkManager.Singleton != null)
+        if (NetworkManager.Singleton != null || TestMultiplayer.Instance != null || TestLobby.Instance != null)
         {
-            Destroy(NetworkManager.Singleton.gameObject);
+            if (NetworkManager.Singleton != null) Destroy(NetworkManager.Singleton.gameObject);
+            if (TestMultiplayer.Instance != null) Destroy(TestMultiplayer.Instance.gameObject);
+            if (TestLobby.Instance != null) Destroy(TestLobby.Instance.gameObject);
+            Loader.LoadAddative(Loader.Scene.ManagerScene);
         }
-
-        if (TestMultiplayer.Instance != null)
+        else
         {
-            Destroy(TestMultiplayer.Instance.gameObject);
+            Loader.LoadAddative(Loader.Scene.ManagerScene);
         }
     }
 }

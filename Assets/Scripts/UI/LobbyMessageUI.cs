@@ -86,5 +86,10 @@ public class LobbyMessageUI : MonoBehaviour
     private void OnDestroy()
     {
         TestMultiplayer.Instance.OnFailedToJoinGame -= TestMultiplayer_OnFailedToJoinGame;
+        TestLobby.Instance.OnCreateLobbyStarted -= TestLobby_OnCreateLobbyStarted;
+        TestLobby.Instance.OnCreateLobbyFailed -= TestLobby_OnCreateLobbyFailed;
+        TestLobby.Instance.OnJoinStarted -= TestLobby_OnJoinStarted;
+        TestLobby.Instance.OnJoinFailed -= TestLobby_OnJoinFailed;
+        TestLobby.Instance.OnQuickJoinFailed -= TestLobby_OnQuickJoinFailed;
     }
 }

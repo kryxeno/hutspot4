@@ -11,7 +11,9 @@ public static class Loader
         LobbyScene,
         LoadingScene,
         CharacterSelectScene,
-        GameScene
+        GameScene,
+        ManagerScene,
+        MainMenuScene
     }
 
     private static Scene targetScene;
@@ -26,6 +28,12 @@ public static class Loader
     {
         NetworkManager.Singleton.SceneManager.LoadScene(targetScene.ToString(), LoadSceneMode.Single);
         // to implement loadingscreen you should use NetworkManager.Singleton.SceneManager.OnLoadEventComplete in the loadercallback
+    }
+
+    public static void LoadAddative(Scene targetScene)
+    {
+        SceneManager.LoadScene(targetScene.ToString(), LoadSceneMode.Additive);
+
     }
 
     public static void LoaderCallback()

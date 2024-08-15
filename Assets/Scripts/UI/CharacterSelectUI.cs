@@ -29,9 +29,9 @@ public class CharacterSelectUI : MonoBehaviour
 
     private void OnLeaveButtonClicked()
     {
-        NetworkManager.Singleton.Shutdown();
         TestLobby.Instance.LeaveLobby();
-        Loader.Load(Loader.Scene.LobbyScene);
+        TestMultiplayer.Instance.Shutdown();
+        Loader.Load(Loader.Scene.MainMenuScene);
     }
 
     private void OnReadyButtonClicked()

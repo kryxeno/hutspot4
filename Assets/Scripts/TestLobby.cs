@@ -7,9 +7,19 @@ using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using QFSW.QC;
 using System;
+using UnityEngine.SceneManagement;
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
+using System.Threading.Tasks;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Relay;
+using Mono.CSharp.Linq;
 
 public class TestLobby : MonoBehaviour
 {
+    private const string KEY_RELAY_JOIN_CODE = "RelayJoinCode";
+
     public static TestLobby Instance { get; private set; }
 
     public event EventHandler OnCreateLobbyStarted;
@@ -107,7 +117,9 @@ public class TestLobby : MonoBehaviour
 
     private void HandlePeriodicLobbyListUpdate()
     {
-        if (joinedLobby == null && AuthenticationService.Instance.IsSignedIn)
+        if (joinedLobby == null &&
+            AuthenticationService.Instance.IsSignedIn &&
+            SceneManager.GetActiveScene().name == Loader.Scene.LobbyScene.ToString())
         {
             lobbyListUpdateTimer -= Time.deltaTime;
             if (lobbyListUpdateTimer < 0f)
@@ -116,6 +128,48 @@ public class TestLobby : MonoBehaviour
                 lobbyListUpdateTimer = lobbyListUpdateTimerMax;
                 ListLobbies();
             }
+        }
+    }
+
+    private async Task<Allocation> AllocateRelay()
+    {
+        try
+        {
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(TestMultiplayer.MAX_PLAYER_AMOUNT - 1);
+            return allocation;
+        }
+        catch (RelayServiceException e)
+        {
+            Debug.Log(e);
+            return default;
+        }
+    }
+
+    private async Task<string> GetRelayJoinCode(Allocation allocation)
+    {
+        try
+        {
+            string relayCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            return relayCode;
+        }
+        catch (RelayServiceException e)
+        {
+            Debug.Log(e);
+            return default;
+        }
+    }
+
+    private async Task<JoinAllocation> JoinRelay(string joinCode)
+    {
+        try
+        {
+            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+            return joinAllocation;
+        }
+        catch (RelayServiceException e)
+        {
+            Debug.Log(e);
+            return default;
         }
     }
 
@@ -128,19 +182,25 @@ public class TestLobby : MonoBehaviour
             CreateLobbyOptions createLobbyOptions = new CreateLobbyOptions
             {
                 IsPrivate = isPrivate,
-                Player = GetPlayer(),
-                Data = new Dictionary<string, DataObject> {
-                    { "LobbyName", new DataObject(DataObject.VisibilityOptions.Public, lobbyName) },
-                    { "GameMode", new DataObject(DataObject.VisibilityOptions.Public, "Story") },
-                }
             };
 
             joinedLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, TestMultiplayer.MAX_PLAYER_AMOUNT, createLobbyOptions);
 
+            Allocation allocation = await AllocateRelay();
+
+            string relayJoinCode = await GetRelayJoinCode(allocation);
+
+            await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject> {
+                    { KEY_RELAY_JOIN_CODE, new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode) }
+                }
+            });
+
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, "dtls"));
+
             TestMultiplayer.Instance.StartHost();
             Loader.LoadNetwork(Loader.Scene.CharacterSelectScene);
-            // Debug.Log("Lobby created: " + lobby.Name + ' ' + lobby.MaxPlayers + ' ' + lobby.Id + ' ' + lobby.LobbyCode);
-            // PrintPlayers(lobby);
         }
         catch (LobbyServiceException e)
         {
@@ -152,6 +212,7 @@ public class TestLobby : MonoBehaviour
     [Command]
     private async void ListLobbies()
     {
+
         try
         {
             QueryLobbiesOptions queryLobbiesOptions = new QueryLobbiesOptions
@@ -168,18 +229,12 @@ public class TestLobby : MonoBehaviour
             QueryResponse queryResponse = await Lobbies.Instance.QueryLobbiesAsync(queryLobbiesOptions);
 
             OnLobbyListChanged?.Invoke(this, new OnLobbyListChangedEventArgs { lobbyList = queryResponse.Results });
-
-            // Debug.Log("Lobbies found: " + queryResponse.Results.Count);
-
-            // foreach (Lobby lobby in queryResponse.Results)
-            // {
-            //     Debug.Log("Lobby: " + lobby.Name + ' ' + lobby.MaxPlayers + ' ' + lobby.Data["GameMode"].Value);
-            // }
         }
         catch (LobbyServiceException e)
         {
             Debug.Log("Error creating lobby: " + e.Message);
         }
+
     }
 
     public Lobby GetLobby()
@@ -200,10 +255,12 @@ public class TestLobby : MonoBehaviour
             QueryResponse queryResponse = await Lobbies.Instance.QueryLobbiesAsync();
 
             joinedLobby = await Lobbies.Instance.JoinLobbyByCodeAsync(lobbyCode, joinLobbyByCodeOptions);
-            TestMultiplayer.Instance.StartClient();
 
-            Debug.Log("Joined lobby: " + joinedLobby.Name + ' ' + joinedLobby.Players.Count);
-            PrintPlayers(joinedLobby);
+            string relayJoinCode = joinedLobby.Data[KEY_RELAY_JOIN_CODE].Value;
+            JoinAllocation joinAllocation = await JoinRelay(relayJoinCode);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+
+            TestMultiplayer.Instance.StartClient();
         }
         catch (LobbyServiceException e)
         {
@@ -225,10 +282,12 @@ public class TestLobby : MonoBehaviour
             QueryResponse queryResponse = await Lobbies.Instance.QueryLobbiesAsync();
 
             joinedLobby = await Lobbies.Instance.JoinLobbyByIdAsync(lobbyId, joinLobbyByIdOptions);
-            TestMultiplayer.Instance.StartClient();
 
-            Debug.Log("Joined lobby: " + joinedLobby.Name + ' ' + joinedLobby.Players.Count);
-            PrintPlayers(joinedLobby);
+            string relayJoinCode = joinedLobby.Data[KEY_RELAY_JOIN_CODE].Value;
+            JoinAllocation joinAllocation = await JoinRelay(relayJoinCode);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+
+            TestMultiplayer.Instance.StartClient();
         }
         catch (LobbyServiceException e)
         {
@@ -248,39 +307,17 @@ public class TestLobby : MonoBehaviour
                 Player = GetPlayer()
             };
             joinedLobby = await Lobbies.Instance.QuickJoinLobbyAsync(quickJoinLobbyOptions);
+
+            string relayJoinCode = joinedLobby.Data[KEY_RELAY_JOIN_CODE].Value;
+            JoinAllocation joinAllocation = await JoinRelay(relayJoinCode);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+
             TestMultiplayer.Instance.StartClient();
-
-            Debug.Log("Joined lobby: " + joinedLobby.Name + ' ' + joinedLobby.Players.Count);
-            PrintPlayers(joinedLobby);
-
         }
         catch (LobbyServiceException e)
         {
             Debug.Log("Error joining lobby: " + e.Message);
             OnQuickJoinFailed?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    private void PrintPlayers(Lobby lobby)
-    {
-        Debug.Log("Lobby Gamemode: " + lobby.Data["GameMode"].Value);
-        Debug.Log("Players in lobby: " + lobby.Players.Count);
-        foreach (Player player in lobby.Players)
-        {
-            Debug.Log("Player: " + player.Id + ' ' + player.Data["PlayerName"].Value);
-        }
-    }
-
-    [Command]
-    private void PrintPlayers()
-    {
-        if (joinedLobby != null)
-        {
-            PrintPlayers(joinedLobby);
-        }
-        else
-        {
-            Debug.Log("No lobby joined");
         }
     }
 
@@ -305,26 +342,6 @@ public class TestLobby : MonoBehaviour
     }
 
     [Command]
-    private async void UpdateLobbyGameMode(string gameMode)
-    {
-        try
-        {
-            joinedLobby = await Lobbies.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
-            {
-                Data = new Dictionary<string, DataObject> {
-                { "GameMode", new DataObject(DataObject.VisibilityOptions.Public, gameMode) }
-            }
-            });
-
-            PrintPlayers(joinedLobby);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.Log("Error updating lobby: " + e.Message);
-        }
-    }
-
-    [Command]
     private async void UpdatePlayerName(string newPlayerName)
     {
         try
@@ -333,8 +350,6 @@ public class TestLobby : MonoBehaviour
             UpdatePlayerOptions player = GetUpdatePlayerOptions(newPlayerName);
 
             joinedLobby = await Lobbies.Instance.UpdatePlayerAsync(joinedLobby.Id, AuthenticationService.Instance.PlayerId, player);
-
-            PrintPlayers(joinedLobby);
         }
         catch (LobbyServiceException e)
         {
@@ -378,8 +393,6 @@ public class TestLobby : MonoBehaviour
             {
                 HostId = joinedLobby.Players[1].Id
             });
-
-            PrintPlayers(joinedLobby);
         }
         catch (LobbyServiceException e)
         {
@@ -388,7 +401,7 @@ public class TestLobby : MonoBehaviour
     }
 
     [Command]
-    private async void DeleteLobby()
+    public async void DeleteLobby()
     {
         try
         {
