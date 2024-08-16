@@ -8,4 +8,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/KinematicCharacterController/Examples/Scenes/CharacterPlayground.unity
     guid: 49c21577d8fcba049bf2f94ab33e2dc2
+  - enabled: 1
+    path: Assets/Scenes/Biome1Test.unity
+    guid: ca9664f43dbac9e409138bc4e0bfd9be
   m_configObjects: {}
