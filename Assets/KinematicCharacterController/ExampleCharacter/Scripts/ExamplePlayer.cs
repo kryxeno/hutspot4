@@ -83,6 +83,7 @@ namespace KinematicCharacterController.Examples
 
             // Input for zooming the camera (disabled in WebGL because it can cause problems)
             float scrollInput = -Input.GetAxis(MouseScrollInput);
+
 #if UNITY_WEBGL
         scrollInput = 0f;
 #endif

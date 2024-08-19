@@ -32,8 +32,9 @@ namespace KinematicCharacterController
     /// proper interaction with characters
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
-    public class PhysicsMover : MonoBehaviour
+    public class PhysicsMover : NetworkBehaviour
     {
+
         /// <summary>
         /// The mover's Rigidbody
         /// </summary>
