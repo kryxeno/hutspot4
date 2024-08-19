@@ -13,6 +13,8 @@ namespace KinematicCharacterController.Examples
         public ExampleCharacterController Character;
         public ExampleCharacterVirtualCamera CharacterCamera;
 
+        [SerializeField] private PlayerVisual playerVisual;
+
         private const string MouseXInput = "Mouse X";
         private const string MouseYInput = "Mouse Y";
         private const string MouseScrollInput = "Mouse ScrollWheel";
@@ -30,6 +32,8 @@ namespace KinematicCharacterController.Examples
 
         private void Start()
         {
+            PlayerData playerData = TestMultiplayer.Instance.GetPlayerDataFromClientId(OwnerClientId);
+            playerVisual.SetPlayerColor(TestMultiplayer.Instance.GetPlayerColor(playerData.colorId));
             if (IsSpawned && !IsOwner) return;
             // Cursor.lockState = CursorLockMode.Locked;
 
@@ -39,7 +43,6 @@ namespace KinematicCharacterController.Examples
             // Ignore the character's collider(s) for camera obstruction checks
             CharacterCamera.IgnoredColliders.Clear();
             CharacterCamera.IgnoredColliders.AddRange(Character.GetComponentsInChildren<Collider>());
-
         }
 
         private void Update()

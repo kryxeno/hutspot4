@@ -257,14 +257,17 @@ namespace KinematicCharacterController
             InitialSimulationPosition = TransientPosition;
             InitialSimulationRotation = TransientRotation;
 
+            // if (IsSpawned && IsServer)
+            // {
             MoverController.UpdateMovement(out _internalTransientPosition, out _internalTransientRotation, deltaTime);
+            // }
 
             if (deltaTime > 0f)
             {
                 Velocity = (TransientPosition - InitialSimulationPosition) / deltaTime;
 
-                Quaternion rotationFromCurrentToGoal = TransientRotation * (Quaternion.Inverse(InitialSimulationRotation));
-                AngularVelocity = (Mathf.Deg2Rad * rotationFromCurrentToGoal.eulerAngles) / deltaTime;
+                Quaternion rotationFromCurrentToGoal = TransientRotation * Quaternion.Inverse(InitialSimulationRotation);
+                AngularVelocity = Mathf.Deg2Rad * rotationFromCurrentToGoal.eulerAngles / deltaTime;
             }
         }
     }
