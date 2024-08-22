@@ -266,7 +266,7 @@ MonoBehaviour:
   BonusOrientationMethod: 1
   BonusOrientationSharpness: 20
   Gravity: {x: 0, y: -30, z: 0}
-  MeshRoot: {fileID: 0}
+  MeshRoot: {fileID: 3852486502755017098}
   CameraFollowPoint: {fileID: 6632466987780032190}
   CrouchedCapsuleHeight: 1
 --- !u!114 &3653568271764516690

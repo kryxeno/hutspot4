@@ -4,6 +4,8 @@ using UnityEngine;
 using KinematicCharacterController;
 using System;
 using Unity.Netcode;
+using FMOD.Studio;
+using Mono.CSharp;
 
 namespace KinematicCharacterController.Examples
 {
@@ -90,6 +92,10 @@ namespace KinematicCharacterController.Examples
         private Vector3 lastInnerNormal = Vector3.zero;
         private Vector3 lastOuterNormal = Vector3.zero;
 
+        [Header("Sound")]
+        private EventInstance playerFootsteps;
+
+
         private void Awake()
         {
             // Handle initial state
@@ -100,6 +106,12 @@ namespace KinematicCharacterController.Examples
 
             // KinematicCharacterSystem.Settings.AutoSimulation = false;
             // KinematicCharacterSystem.Settings.Interpolate = false;
+        }
+
+        private void Start()
+        {
+            playerFootsteps = AudioManager.instance.CreateEventInstance(FMODEvents.Instance.PlayerFootsteps);
+            FMODUnity.RuntimeManager.AttachInstanceToGameObject(playerFootsteps, gameObject.transform, gameObject.GetComponent<Rigidbody>());
         }
 
         /// <summary>
@@ -452,6 +464,8 @@ namespace KinematicCharacterController.Examples
                     }
             }
 
+            UpdateSound();
+
             if (IsSpawned && IsOwner)
             {
                 UpdateStateServerRpc(Motor.GetState(), new ServerRpcParams());
@@ -535,6 +549,30 @@ namespace KinematicCharacterController.Examples
             if (IsOwner) return;
             // Debug.Log($"CLIENT received new state from server");
             Motor.ApplyState(receivedState);
+        }
+
+        private void UpdateSound()
+        {
+            FMODUnity.RuntimeManager.AttachInstanceToGameObject(playerFootsteps, MeshRoot.transform, gameObject.GetComponent<Rigidbody>());
+
+            if (Motor.GroundingStatus.IsStableOnGround && Motor.Velocity != Vector3.zero)
+            {
+                playerFootsteps.getPlaybackState(out PLAYBACK_STATE playbackState);
+                if (playbackState.Equals(PLAYBACK_STATE.STOPPED))
+                {
+                    Debug.Log("Starting footsteps");
+                    playerFootsteps.start();
+                }
+            }
+            else
+            {
+                playerFootsteps.getPlaybackState(out PLAYBACK_STATE playbackState);
+                if (playbackState.Equals(PLAYBACK_STATE.PLAYING) || playbackState.Equals(PLAYBACK_STATE.STARTING))
+                {
+                    Debug.Log("Stopping footsteps");
+                    playerFootsteps.stop(STOP_MODE.ALLOWFADEOUT);
+                }
+            }
         }
     }
 }

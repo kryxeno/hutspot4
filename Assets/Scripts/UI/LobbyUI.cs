@@ -43,16 +43,19 @@ public class LobbyUI : MonoBehaviour
     private void OnCreateLobbyButtonClicked()
     {
         createLobbyUI.Show();
+        AudioManager.instance.PlayOneShot(FMODEvents.Instance.UiClicked, this.transform.position);
     }
 
     private void OnQuickJoinButtonClicked()
     {
         TestLobby.Instance.QuickJoinLobby();
+        AudioManager.instance.PlayOneShot(FMODEvents.Instance.UiClicked, this.transform.position);
     }
 
     private void OnJoinByCodeButtonClicked()
     {
         TestLobby.Instance.JoinLobbyByCode(codeInputField.text);
+        AudioManager.instance.PlayOneShot(FMODEvents.Instance.UiClicked, this.transform.position);
     }
 
     private void UpdateLobbyList(List<Lobby> lobbyList)

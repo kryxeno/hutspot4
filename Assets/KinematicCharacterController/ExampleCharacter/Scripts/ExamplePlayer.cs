@@ -5,6 +5,8 @@ using Unity.Netcode;
 using KinematicCharacterController;
 using KinematicCharacterController.Examples;
 using Cinemachine;
+using FMODUnity;
+using Unity.VisualScripting;
 
 namespace KinematicCharacterController.Examples
 {
@@ -38,6 +40,7 @@ namespace KinematicCharacterController.Examples
             // Cursor.lockState = CursorLockMode.Locked;
 
             // Tell camera to follow transform
+            // RuntimeManager.SetListenerLocation(gameObject, GetComponent<Rigidbody>(), gameObject);
             CharacterCamera.SetFollowTransform(Character.CameraFollowPoint);
 
             // Ignore the character's collider(s) for camera obstruction checks
