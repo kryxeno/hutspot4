@@ -19,6 +19,7 @@ namespace KinematicCharacterController.Walkthrough.OrientingArbitraryDirection
         private const string HorizontalInput = "Horizontal";
         private const string VerticalInput = "Vertical";
 
+
         private void Start()
         {
             Cursor.lockState = CursorLockMode.Locked;
