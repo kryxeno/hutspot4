@@ -2,6 +2,7 @@
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
+using Unity.Netcode;
 
 
 namespace StarterAssets
@@ -10,7 +11,7 @@ namespace StarterAssets
 #if ENABLE_INPUT_SYSTEM
 	[RequireComponent(typeof(PlayerInput))]
 #endif
-	public class FirstPersonController : MonoBehaviour
+	public class SimplestFirstPersonController : NetworkBehaviour
 	{
 		[Header("Player")]
 		[Tooltip("Move speed of the character in m/s")]
@@ -89,7 +90,6 @@ namespace StarterAssets
 
 		private void Awake()
 		{
-			// get a reference to our main camera
 			if (_mainCamera == null)
 			{
 				_mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
@@ -98,6 +98,7 @@ namespace StarterAssets
 
 		private void Start()
 		{
+			//All was moved to OnNetworkSpawn()
 			_controller = GetComponent<CharacterController>();
 			_input = GetComponent<StarterAssetsInputs>();
 #if ENABLE_INPUT_SYSTEM
@@ -111,16 +112,32 @@ namespace StarterAssets
 			_fallTimeoutDelta = FallTimeout;
 		}
 
-		private void Update()
+        public override void OnNetworkSpawn()
+        {
+			if (!IsOwner) return;
+
+			
+
+			
+		}
+
+        private void Update()
 		{
-			JumpAndGravity();
-			GroundedCheck();
-			Move();
+			if (IsOwner || !IsSpawned)
+            {
+				JumpAndGravity();
+				GroundedCheck();
+				Move();
+			}
 		}
 
 		private void LateUpdate()
 		{
-			CameraRotation();
+			if (IsOwner || !IsSpawned)
+            {
+				CameraRotation();
+			}
+			
 		}
 
 		private void GroundedCheck()
@@ -135,6 +152,7 @@ namespace StarterAssets
 			// if there is an input
 			if (_input.look.sqrMagnitude >= _threshold)
 			{
+				Debug.Log(_input.look);
 				//Don't multiply mouse input by Time.deltaTime
 				float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
 				
