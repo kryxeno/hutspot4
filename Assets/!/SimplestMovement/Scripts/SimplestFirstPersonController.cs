@@ -117,8 +117,6 @@ namespace StarterAssets
 			if (!IsOwner) return;
 
 			
-
-			
 		}
 
         private void Update()
@@ -152,7 +150,6 @@ namespace StarterAssets
 			// if there is an input
 			if (_input.look.sqrMagnitude >= _threshold)
 			{
-				Debug.Log(_input.look);
 				//Don't multiply mouse input by Time.deltaTime
 				float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
 				
