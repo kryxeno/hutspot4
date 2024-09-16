@@ -129,22 +129,30 @@ namespace SpaceshipPrototyping
             {
                 case AirshipState.Flying or AirshipState.Takeoff:
                     //Go land if we have a target
+                    StopLandingCoroutines();
                     StartCoroutine("AlignWithTarget", landTarget);
                     return;
 
                 case AirshipState.Grounded:
                     //Start flying, the coroutine is supposed to set the correct state
+                    StopLandingCoroutines();
                     StartCoroutine("Takeoff", landTarget.position + Vector3.up * 5f);
                     return;
 
                 case AirshipState.Landing:
                     //Stop landing and set state to flying
-                    StopCoroutine("AlignWithTarget");
-                    StopCoroutine("LandToTarget");
+                    StopLandingCoroutines();
                     airshipState = AirshipState.Flying;
                     return;
             }
 
+        }
+
+        private void StopLandingCoroutines()
+        {
+            StopCoroutine("AlignWithTarget");
+            StopCoroutine("LandToTarget");
+            StopCoroutine("Takeoff");
         }
 
 

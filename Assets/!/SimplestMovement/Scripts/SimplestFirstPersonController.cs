@@ -3,13 +3,15 @@
 using UnityEngine.InputSystem;
 #endif
 using Unity.Netcode;
+using StarterAssets;
+using SimplestMovement;
 
 
-namespace StarterAssets
+namespace SimplestMovement
 {
 	[RequireComponent(typeof(CharacterController))]
 #if ENABLE_INPUT_SYSTEM
-	[RequireComponent(typeof(PlayerInput))]
+	//[RequireComponent(typeof(PlayerInput))]
 #endif
 	public class SimplestFirstPersonController : NetworkBehaviour
 	{
@@ -65,16 +67,29 @@ namespace StarterAssets
 		// timeout deltatime
 		private float _jumpTimeoutDelta;
 		private float _fallTimeoutDelta;
-
 	
 #if ENABLE_INPUT_SYSTEM
-		private PlayerInput _playerInput;
+		[SerializeField] private PlayerInput _playerInput;
 #endif
 		private CharacterController _controller;
 		private StarterAssetsInputs _input;
 		private GameObject _mainCamera;
 
 		private const float _threshold = 0.01f;
+
+
+
+
+		[Header("Moving Platforms")]
+		//Stuff added
+		[SerializeField] private float raycastLength;
+		[SerializeField] private Transform raycastStart;
+		[SerializeField] private LayerMask moveLayer;
+		private bool hasMover;
+		private Vector3 lastMoverPos;
+		private Vector3 moverVelocity;
+
+
 
 		private bool IsCurrentDeviceMouse
 		{
@@ -94,29 +109,33 @@ namespace StarterAssets
 			{
 				_mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
 			}
+
+			hasMover = false;
 		}
 
 		private void Start()
 		{
 			//All was moved to OnNetworkSpawn()
+
+			//_playerInput = GetComponent<PlayerInput>();
+			_playerInput = GameObject.Find("InputManager").GetComponent<PlayerInput>();
+
 			_controller = GetComponent<CharacterController>();
-			_input = GetComponent<StarterAssetsInputs>();
-#if ENABLE_INPUT_SYSTEM
-			_playerInput = GetComponent<PlayerInput>();
-#else
-			Debug.LogError( "Starter Assets package is missing dependencies. Please use Tools/Starter Assets/Reinstall Dependencies to fix it");
-#endif
+			//_input = GetComponent<StarterAssetsInputs>();
+			_input = GameObject.Find("InputManager").GetComponent<StarterAssetsInputs>();
+
 
 			// reset our timeouts on start
 			_jumpTimeoutDelta = JumpTimeout;
 			_fallTimeoutDelta = FallTimeout;
 		}
 
-        public override void OnNetworkSpawn()
+		public override void OnNetworkSpawn()
         {
 			if (!IsOwner) return;
 
 			
+
 		}
 
         private void Update()
@@ -126,6 +145,7 @@ namespace StarterAssets
 				JumpAndGravity();
 				GroundedCheck();
 				Move();
+				//MoveWithPlatforms();
 			}
 		}
 
@@ -204,6 +224,7 @@ namespace StarterAssets
 
 			// note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
 			// if there is a move input rotate player when the player is moving
+
 			if (_input.move != Vector2.zero)
 			{
 				// move
@@ -280,5 +301,40 @@ namespace StarterAssets
 			// when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
 			Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
 		}
+
+		private void MoveWithPlatforms()
+        {
+			RaycastHit hit;
+			bool hitsMover = Physics.Raycast(raycastStart.position, -transform.up, out hit, raycastLength, moveLayer);
+			if (hitsMover && !hasMover)
+			{
+				hasMover = true;
+			}
+
+			if (!hitsMover)
+			{
+				hasMover = false;
+			}
+
+			if (hasMover)
+			{
+				// It is important to have a correct lastMoverPos here already... could cause bugs this way
+				if (lastMoverPos == null) lastMoverPos = hit.transform.position;
+
+				if ((lastMoverPos - hit.transform.position).magnitude > 0.2f) lastMoverPos = hit.transform.position;
+
+				moverVelocity = hit.transform.position - lastMoverPos;
+				transform.position += moverVelocity;
+				lastMoverPos = hit.transform.position;
+			}
+		}
+
+		public void MovePlayer(Vector3 moveVec)
+        {
+			if (IsOwner)
+            {
+				transform.position += moveVec;
+			}
+        }
 	}
 }
